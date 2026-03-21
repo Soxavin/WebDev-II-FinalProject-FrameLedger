@@ -1,8 +1,8 @@
 # FrameLedger
 
-**Course:** INFO 251 — Web Development II | Spring 2026
-**Team:** Vin, Tou
-**Group size note:** This project was completed as a group of 2. Per the guidelines, individual or smaller group submissions are allowed upon request based on reason.
+**Course:** INFO 251 — Web Development II | Spring 2026</br>
+**Team:** LOEUNG Soxavin, LACH Sovitou</br>
+**Group size note:** This project was completed as a group of 2.
 
 ---
 
