@@ -446,8 +446,16 @@ Covers all 4 HTTP methods and key features in under 2 minutes:
 
 | Feature | Developer |
 |---|---|
-| *(Fill in before submission)* | Vin |
-| *(Fill in before submission)* | Tou |
+| Project architecture, file structure, script load order | Vin |
+| TMDB API module (`tmdb.js`) — private `request()` wrapper, all 7 endpoints | Vin |
+| `config.js` — API credentials, single source of truth | Vin |
+| Shared UI utilities (`ui.js`) — Toast, Spinner, `buildMovieCard`, `Validate`, `escapeHtml` | Vin |
+| Home page — Search mode: debounce, search history, pagination, keyboard shortcuts (`search.js`) | Vin |
+| Movie detail page — `Promise.all` parallel fetch, trailer embed, similar films, reviews, add-to-watchlist form (`movie.js`) | Vin |
+| CSS design — dark cinema / film noir theme, responsive breakpoints, animations | Vin |
+| MockAPI CRUD module (`watchlist.js`) — GET, POST, PUT, DELETE | Tou |
+| Watchlist page — filter tabs, sort, inline edit, star rating picker, delete modal, stats, skeleton loader (`watchlist-page.js`) | Tou |
+| Discover mode — genre/rating filters, sort options, Surprise Me, mode switching (`discover.js`) | Tou |
 
 ---
 
