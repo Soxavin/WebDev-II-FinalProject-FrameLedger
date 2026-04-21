@@ -223,8 +223,8 @@ If we had more time:
 
 | Developer | Contributions |
 |---|---|
-| LOEUNG Soxavin | Project architecture, TMDB API integration, shared UI utilities, home page (search + discover), movie detail page, CSS |
-| LACH Sovitou | MockAPI CRUD integration, watchlist page, discover mode filters and Surprise Me feature |
+| LOEUNG Soxavin | Project architecture, MockAPI CRUD integration, TMDB API integration, home page (search + discover), movie detail page |
+| LACH Sovitou | CSS, watchlist page, shared UI utilities (`ui.js`), discover mode filters and Surprise Me feature |
 
 ---
 
