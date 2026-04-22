@@ -1,21 +1,20 @@
 // =============================================
-//  search.js — Home Page Search Logic
+//  search.js - Home Page Search Logic
 //
-//  PURPOSE:
 //  Controls the Search mode on the home page.
 //  Handles user input, form validation, calling
 //  the TMDB search API, rendering results as
 //  movie cards, and managing pagination.
 //
-//  HOW IT WORKS:
-//  1. User types — debounce timer starts (400ms)
+//  How it works:
+//  1. User types - debounce timer starts (400ms)
 //  2. If user keeps typing, timer resets each keystroke
 //  3. When user pauses for 400ms, doSearch() fires
 //  4. Pressing Enter or clicking Search fires immediately
 //  5. renderResults() builds movie cards from the data
 //  6. Pagination buttons let the user browse pages
 //
-//  DEBOUNCING EXPLAINED:
+//  Debouncing explained:
 //  Instead of firing a request on every keystroke,
 //  we wait until the user stops typing for 400ms.
 //  This is done with setTimeout/clearTimeout:
@@ -25,16 +24,16 @@
 //  This reduces API calls from ~10 per word typed
 //  down to 1 per completed word.
 //
-//  KEYBOARD SHORTCUTS:
-//  '/'     — focus the search input from anywhere
-//  Escape  — clear the input and blur focus
+//  Keyboard shortcuts:
+//  '/'     - focus the search input from anywhere
+//  Escape  - clear the input and blur focus
 //
-//  SHARES DOM WITH: discover.js
+//  Shares DOM with: discover.js
 //  Both scripts use #movieGrid, #pagination, etc.
 //  When Discover mode is active, discover.js takes
 //  over the pagination buttons via .onclick.
 //
-//  DEPENDS ON: config.js, tmdb.js, ui.js
+//  Depends on: config.js, tmdb.js, ui.js
 // =============================================
 
 (() => {
@@ -153,8 +152,8 @@
     // Save successful search to history
     saveToHistory(query);
 
-    // Update URL with current query so card links can pass ?q= back
-    // This doesn't reload the page — just updates the browser history
+    // Update URL with current query so card links can pass ?q= back.
+    // replaceState doesn't reload the page, just updates the address bar.
     if (page === 1) {
       const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}`;
       window.history.replaceState({}, '', newUrl);

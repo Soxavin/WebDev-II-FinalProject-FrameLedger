@@ -1,37 +1,36 @@
 // =============================================
-//  movie.js — Movie Detail Page Logic
+//  movie.js - Movie Detail Page Logic
 //
-//  PURPOSE:
 //  Controls everything on movie.html. Reads the
 //  movie ID from the URL, fetches all required
 //  data from TMDB in parallel, and renders the
 //  full detail view including poster, metadata,
 //  trailer, similar films, and the watchlist form.
 //
-//  HOW IT WORKS:
+//  How it works:
 //  1. getParam('id') reads ?id=XXXX from the URL
-//  2. Three TMDB requests fire simultaneously via
-//     Promise.all() — details, videos, similar films
+//  2. Four TMDB requests fire simultaneously via
+//     Promise.all() - details, videos, similar, reviews
 //  3. Each render function populates its section
 //  4. initWatchlistForm() checks if the movie is
 //     already saved, then sets up the add form
 //
-//  WHY PROMISE.ALL()?
+//  Why Promise.all()?
 //  Instead of waiting for each request to finish
 //  before starting the next, Promise.all() fires
 //  all four at once. This cuts total load time
 //  from ~1200ms (sequential) to ~300ms (parallel).
 //
-//  WATCHLIST FORM:
+//  Watchlist form:
 //  Uses a double-submit guard (isSubmitting flag)
 //  to prevent duplicate POST requests if the user
 //  clicks "Add to Watchlist" multiple times quickly.
 //
-//  DEPENDS ON: config.js, tmdb.js, watchlist.js, ui.js
+//  Depends on: config.js, tmdb.js, watchlist.js, ui.js
 // =============================================
 
 (() => {
-  // Read the movie ID from the URL — e.g. movie.html?id=550 → '550'
+  // Read the movie ID from the URL - e.g. movie.html?id=550 gives '550'
   const movieId = getParam('id');
 
   // ---- DOM References ------------------------
@@ -51,7 +50,7 @@
   // metadata row, genre tags, and overview paragraph.
   const renderDetails = (movie) => {
     // Update the browser tab title with the movie name
-    document.title = `FrameLedger — ${movie.title}`;
+    document.title = `FrameLedger - ${movie.title}`;
 
     // Set the blurred backdrop image (decorative background)
     const backdrop = TMDB.backdropUrl(movie.backdrop_path);
@@ -59,7 +58,7 @@
       document.getElementById('backdrop').style.backgroundImage = `url('${backdrop}')`;
     }
 
-    // Poster — replace the placeholder <img> with real image,
+    // Poster - replace the placeholder <img> with the real image,
     // or swap to a placeholder div if no poster is available
     const posterEl  = document.getElementById('detailPoster');
     const posterSrc = TMDB.posterUrl(movie.poster_path, 'w500');
@@ -70,8 +69,8 @@
       posterEl.outerHTML = `<div class="detail-poster-placeholder">🎬</div>`;
     }
 
-    // Set back button to return to search results if ?q= is in referrer
-    // This preserves the user's search query when clicking back
+    // Set back button to return to search results if ?q= is in the URL.
+    // This preserves the user's search query when clicking back.
     const backBtn = document.getElementById('backBtn');
     if (backBtn) {
       const referrerQuery = getParam('q');
@@ -80,9 +79,9 @@
       }
     }
 
-    // Eyebrow line: release year, and original title if different
-    // (e.g. a French film shown in English would display both)
-    const year = movie.release_date ? movie.release_date.substring(0, 4) : '—';
+    // Eyebrow line: release year, and original title if it differs from English.
+    // e.g. a French film shown in English would display both.
+    const year = movie.release_date ? movie.release_date.substring(0, 4) : '-';
     document.getElementById('detailEyebrow').innerHTML =
       `${year}${movie.original_title !== movie.title
         ? ` &mdash; ${escapeHtml(movie.original_title)}`
@@ -99,13 +98,13 @@
     const metaRow = document.getElementById('detailMetaRow');
     const runtime = movie.runtime
       ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m`
-      : '—';
-    // Only show rating if the film has actual votes — 0.0 with no votes is misleading
+      : '-';
+    // Only show a rating if the film has actual votes - 0.0 with no votes is misleading
     const rating = movie.vote_count > 0 && movie.vote_average != null
       ? movie.vote_average.toFixed(1)
-      : '—';
-    const votes  = movie.vote_count   ? movie.vote_count.toLocaleString()    : '—';
-    const lang   = movie.original_language ? movie.original_language.toUpperCase() : '—';
+      : '-';
+    const votes  = movie.vote_count   ? movie.vote_count.toLocaleString()    : '-';
+    const lang   = movie.original_language ? movie.original_language.toUpperCase() : '-';
 
 metaRow.innerHTML = `
         <div class="detail-meta-item">
@@ -126,10 +125,10 @@ metaRow.innerHTML = `
         </div>
         <div class="detail-meta-item">
           <span class="label">${'Status'}</span>
-          <span class="value">${escapeHtml(movie.status || '—')}</span>
+          <span class="value">${escapeHtml(movie.status || '-')}</span>
         </div>`;
 
-    // Genre tags — map genre objects to badge spans
+    // Genre tags - map genre objects to badge spans
     const genresEl = document.getElementById('detailGenres');
     if (movie.genres && movie.genres.length) {
       genresEl.innerHTML = movie.genres
@@ -151,7 +150,7 @@ metaRow.innerHTML = `
     const trailers = videos.results.filter(
       (v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
     );
-    if (!trailers.length) return; // No trailer available — section stays hidden
+    if (!trailers.length) return; // No trailer available - section stays hidden
 
     // Prefer a full Trailer over a Teaser
     const trailer   = trailers.find((v) => v.type === 'Trailer') || trailers[0];
@@ -162,7 +161,7 @@ metaRow.innerHTML = `
     section.style.display = 'block';
     divider.style.display = 'block';
 
-    // youtube-nocookie.com embeds don't track the user
+    // youtube-nocookie.com doesn't track the user
     // rel=0 hides related videos, modestbranding=1 reduces YouTube branding
     container.innerHTML = `
       <div class="trailer-wrapper">
@@ -179,7 +178,7 @@ metaRow.innerHTML = `
   // Shows up to 8 similar films in a smaller card grid.
   // Uses the same buildMovieCard() helper as the home page.
   const renderSimilar = (movies) => {
-    if (!movies.length) return; // Nothing to show — section stays hidden
+    if (!movies.length) return; // Nothing to show - section stays hidden
 
     const section = document.getElementById('similarSection');
     const grid    = document.getElementById('similarGrid');
@@ -188,9 +187,9 @@ metaRow.innerHTML = `
     section.style.display = 'block';
     if (divider) divider.style.display = 'block';
 
-    // Limit to 8 — enough to be useful without overwhelming the page
+    // Limit to 8 - enough to be useful without overwhelming the page.
     // Note: linkPrefix is 'movie.html' not 'pages/movie.html' because
-    // we're already inside the /pages/ directory
+    // we're already inside the /pages/ directory.
     movies.slice(0, 8).forEach((movie) => {
       grid.appendChild(buildMovieCard(movie, 'movie.html'));
     });
@@ -225,8 +224,8 @@ metaRow.innerHTML = `
     noteInput.addEventListener('input', updateCharCount);
     updateCharCount(); // Set initial value
 
-    // Check if this movie is already in the watchlist
-    // If so, pre-fill the form and disable the add button
+    // Check if this movie is already in the watchlist.
+    // If so, pre-fill the form and disable the add button.
     try {
       const existing = await WatchlistAPI.findByTmdbId(movieId);
       if (existing) {
@@ -238,15 +237,15 @@ metaRow.innerHTML = `
         updateCharCount();
       }
     } catch (_) {
-      // If MockAPI is unreachable, fail silently — the form still works
+      // If MockAPI is unreachable, fail silently - the form still works
     }
 
-    // "View in Watchlist" button — navigates to watchlist.html
+    // "View in Watchlist" button
     viewBtn.addEventListener('click', () => {
       window.location.href = 'watchlist.html';
     });
 
-    // Form submit — POST a new watchlist entry
+    // Form submit - POST a new watchlist entry
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (isSubmitting) return; // Block double-submit
@@ -258,7 +257,7 @@ metaRow.innerHTML = `
       const note   = noteInput.value.trim();
       const status = statusSelect.value;
 
-      // Validate note length (it's optional, but if provided must be ≤200 chars)
+      // The note is optional, but if provided it must be 200 chars or fewer
       if (note && !Validate.maxLength(note, 200)) {
         Validate.showError(noteInput, noteError, 'Note must be 200 characters or fewer.');
         return;
@@ -269,9 +268,8 @@ metaRow.innerHTML = `
       addBtn.disabled    = true;
       addBtn.textContent = 'Adding...';
 
-      // Build the entry object to POST to MockAPI
-      // We store the data we need for the watchlist page
-      // without having to re-fetch from TMDB
+      // Store what we need for the watchlist page so it doesn't have
+      // to re-fetch everything from TMDB just to display the entry
       const entry = {
         tmdbId:      movie.id,
         title:       movie.title,
@@ -297,7 +295,7 @@ metaRow.innerHTML = `
         formError.classList.add('visible');
         Toast.error('Could not save to watchlist: ' + err.message);
       }
-      // Note: isSubmitting is NOT reset on success —
+      // Note: isSubmitting is NOT reset on success -
       // once added, the button stays disabled permanently
     });
   };
@@ -308,14 +306,14 @@ metaRow.innerHTML = `
   // name, star rating (if provided), date, and a
   // truncated excerpt with a "Read more" toggle.
   // Reviews with fewer than 100 characters are skipped
-  // as they add little value.
+  // since they don't really add much.
   const renderReviews = (reviewsData) => {
     // Filter to reviews with meaningful content
     const reviews = reviewsData.results
       .filter((r) => r.content && r.content.length >= 100)
       .slice(0, 3);
 
-    if (!reviews.length) return; // No reviews — section stays hidden
+    if (!reviews.length) return; // No reviews - section stays hidden
 
     const section  = document.getElementById('reviewsSection');
     const grid     = document.getElementById('reviewsGrid');
@@ -339,7 +337,7 @@ metaRow.innerHTML = `
       // Use first letter of author name as avatar initial
       const initial = (review.author || '?')[0].toUpperCase();
 
-      // Truncate long reviews — show first 300 chars with expand toggle
+      // Truncate long reviews - show first 300 chars with an expand toggle
       const EXCERPT_LEN = 300;
       const isLong      = review.content.length > EXCERPT_LEN;
       const excerpt     = isLong
@@ -378,13 +376,12 @@ metaRow.innerHTML = `
     });
   };
 
-  // ---- Main Initialisation -------------------
-  // Fires all four TMDB requests simultaneously using
-  // Promise.all(), then renders each section in order.
-  // If any critical request fails, shows the error state.
+  // ---- Main Init -----------------------------
+  // Fires all four TMDB requests at the same time using Promise.all(),
+  // then renders each section. If anything critical fails, shows the error state.
   const init = async () => {
     try {
-      // Parallel fetch — all four start at the same time
+      // Parallel fetch: all four start at the same time
       const [movie, videos, similar, reviews] = await Promise.all([
         TMDB.getMovieDetails(movieId),   // Main movie data
         TMDB.getMovieVideos(movieId),    // Trailer keys
@@ -414,9 +411,9 @@ metaRow.innerHTML = `
       if (errMsg) {
         const returnLink = `<a href="../index.html" class="error-link">Return to search</a>`;
         if (err.message.includes('404') || err.message.toLowerCase().includes('not found')) {
-          errMsg.innerHTML = `Movie not found — it may have been removed from TMDB. ${returnLink}`;
+          errMsg.innerHTML = `Movie not found - it may have been removed from TMDB. ${returnLink}`;
         } else if (!navigator.onLine || err.message.toLowerCase().includes('failed to fetch')) {
-          errMsg.innerHTML = `Connection issue — check your internet and try again. ${returnLink}`;
+          errMsg.innerHTML = `Connection issue - check your internet and try again. ${returnLink}`;
         } else {
           errMsg.innerHTML = `Could not load film details. ${returnLink}`;
         }

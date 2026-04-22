@@ -1,14 +1,13 @@
 // =============================================
-//  discover.js — Discover Mode Logic
+//  discover.js - Discover Mode Logic
 //
-//  PURPOSE:
 //  Controls the Discover mode on the home page.
 //  Lets users browse movies by genre and/or
 //  minimum rating without needing a search query.
 //  Uses TMDB's /discover/movie endpoint which
 //  supports rich filtering parameters.
 //
-//  HOW IT WORKS:
+//  How it works:
 //  1. User clicks the "Discover" mode toggle button
 //  2. The search pane hides, the discover pane shows
 //  3. Genres are fetched from TMDB and loaded into
@@ -17,7 +16,7 @@
 //  5. User can refine by genre, rating, and sort order
 //  6. Results use the same shared grid as search.js
 //
-//  MODE SWITCHING:
+//  Mode switching:
 //  Both Search and Discover share the same results
 //  grid, results header, and pagination elements.
 //  When switching modes, this script takes over
@@ -25,24 +24,24 @@
 //  releases them back to search.js when switching
 //  back to Search mode.
 //
-//  NAVIGATION:
+//  Navigation:
 //  - Clicking "Discover" in the nav on index.html
 //    intercepts the click and switches mode in-page
 //  - Clicking "Discover" from movie.html/watchlist.html
 //    navigates to index.html?mode=discover, and this
 //    script detects that param on load and auto-switches
 //
-//  DEPENDS ON: config.js, tmdb.js, ui.js
+//  Depends on: config.js, tmdb.js, ui.js
 // =============================================
 
 (() => {
-  // ---- DOM References — Mode Toggle ----------
+  // ---- DOM References - Mode Toggle ----------
   const modeSearch   = document.getElementById('modeSearch');
   const modeDiscover = document.getElementById('modeDiscover');
   const searchPane   = document.getElementById('searchPane');
   const discoverPane = document.getElementById('discoverPane');
 
-  // ---- DOM References — Discover Controls ----
+  // ---- DOM References - Discover Controls ----
   const genreSelect   = document.getElementById('genreSelect');
   const ratingSelect  = document.getElementById('ratingSelect');
   const sortSelect    = document.getElementById('sortSelect');
@@ -62,10 +61,10 @@
   // ---- State ---------------------------------
   let currentPage = 1;   // Current page of discover results
   let totalPages  = 1;   // Total pages from TMDB
-  let lastParams  = {};  // Last filter params — reused by pagination
+  let lastParams  = {};  // Last filter params, reused by pagination
 
   // ---- Mode Switching ------------------------
-  // Switches between Search and Discover UI panes.
+  // Swaps between Search and Discover UI panes.
   // Also transfers ownership of pagination buttons:
   //   - In Search mode: search.js handles prev/next
   //   - In Discover mode: this script handles prev/next
@@ -84,7 +83,7 @@
       modeSearch.classList.remove('active');
       discoverPane.style.display = 'block';
       searchPane.style.display   = 'none';
-      // Take over pagination — use lastParams to re-fetch the same filters
+      // Take over pagination - use lastParams to re-fetch with the same filters
       prevBtn.onclick = () => {
         if (currentPage > 1) {
           currentPage--;
@@ -125,7 +124,7 @@
   // ---- Load Genres ---------------------------
   // Fetches the official TMDB genre list and populates
   // the genre <select> dropdown dynamically.
-  // This is non-fatal — if the request fails, the
+  // This is non-fatal - if the request fails, the
   // dropdown just shows "Any Genre" as the only option.
   const loadGenres = async () => {
     try {
@@ -144,7 +143,7 @@
   loadGenres();
 
   // ---- Render Discover Results ---------------
-  // Same pattern as search.js renderResults —
+  // Same pattern as search.js renderResults -
   // clears the grid, builds cards, updates pagination.
   const renderDiscoverResults = (movies, page, total, label) => {
     initialState.style.display = 'none';
@@ -178,7 +177,7 @@
   // Builds the TMDB API params from the user's filter
   // selections and fires the request.
   //
-  // vote_count.gte: 100 ensures we don't surface
+  // vote_count.gte: 100 makes sure we don't surface
   // obscure films with only 1-2 votes that happen to
   // have a perfect rating.
   const doDiscover = async (params, page = 1) => {
@@ -210,8 +209,8 @@
       const ratingText = params.rating ? `${params.rating}+ ★` : null;
       const parts      = [genreName, ratingText].filter(Boolean);
       const label      = parts.length
-        ? `Discover — ${parts.join(', ')}`
-        : 'Discover — All Films';
+        ? `Discover - ${parts.join(', ')}`
+        : 'Discover - All Films';
 
       renderDiscoverResults(data.results, page, totalPages, label);
     } catch (err) {
@@ -253,9 +252,9 @@
       // Pick a random genre from the available options
       const randomGenre = genreOptions[Math.floor(Math.random() * genreOptions.length)];
 
-      // Set the dropdowns to reflect what we picked (visual feedback)
+      // Update the dropdowns to reflect what was picked (visual feedback)
       genreSelect.value  = randomGenre.value;
-      ratingSelect.value = '';          // No rating filter — keep it open
+      ratingSelect.value = '';          // No rating filter - keep it open
       sortSelect.value   = 'popularity.desc';
 
       // Pick a random starting page (1-3) so results aren't always the same

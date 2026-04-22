@@ -1,31 +1,30 @@
 // =============================================
-//  watchlist-page.js — Watchlist Page Logic
+//  watchlist-page.js - Watchlist Page Logic
 //
-//  PURPOSE:
 //  Controls everything on watchlist.html.
 //  Loads the user's watchlist from MockAPI,
 //  renders it as a list of items, and handles
 //  filtering, sorting, inline editing, deletion,
 //  and the stats dashboard.
 //
-//  CRUD OPERATIONS DEMONSTRATED:
-//  GET    — load all entries on page init
-//  PUT    — save edits via inline edit form
-//  DELETE — remove entry after modal confirmation
+//  CRUD operations shown here:
+//  GET    - load all entries on page init
+//  PUT    - save edits via inline edit form
+//  DELETE - remove entry after modal confirmation
 //  (POST is handled on movie.html)
 //
-//  KEY FEATURES:
+//  Key features:
 //  - Skeleton loader while data is fetching
 //  - Filter tabs (All / Want to Watch / Watching / Completed)
 //  - Sort dropdown (newest, oldest, A-Z, highest rated)
 //  - Inline edit form per entry (no page reload)
 //  - Confirmation modal before deleting
-//  - Stats dashboard (total, per-status counts, avg rating)
+//  - Stats dashboard (total, per-status counts, progress bar)
 //  - Stats always stay in sync after any edit/delete
 //  - Double-submit guards on save and delete
 //  - Escape key closes modals and edit forms
 //
-//  DEPENDS ON: config.js, tmdb.js, watchlist.js, ui.js
+//  Depends on: config.js, tmdb.js, watchlist.js, ui.js
 // =============================================
 
 (() => {
@@ -48,7 +47,7 @@
 
   // ---- Preference Persistence ----------------
   // Saves and restores the active filter/sort across page reloads
-  // using localStorage, so the user returns to the same view.
+  // using localStorage, so the user comes back to the same view.
   const PREFS_KEY = 'wl_prefs';
   const loadPrefs = () => {
     try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
@@ -89,7 +88,6 @@
 
   // ---- Stats Dashboard -----------------------
   // Shows total films and per-status counts.
-  // Rating averages removed — not meaningful across mixed lists.
   const renderStats = (entries) => {
     if (!entries.length) {
       document.getElementById('statsSection').style.display = 'none';
@@ -228,7 +226,7 @@
         <button class="btn btn--ghost btn--sm delete-btn" data-id="${entry.id}" title="Remove">🗑</button>
       </div>
 
-      <!-- Inline edit form — hidden by default, toggled by edit button -->
+      <!-- Inline edit form - hidden by default, toggled by edit button -->
       <div class="watchlist-item__edit-form" id="editForm-${entry.id}">
         <div class="form-group">
           <label>Status</label>
@@ -277,7 +275,8 @@
       }
     });
 
-    // Star picker interaction
+    // Star picker interaction:
+    // hovering lights up stars up to that point (preview), clicking commits the value
     const starPicker = item.querySelector(`#starPicker-${entry.id}`);
     if (starPicker) {
       const updateActiveStars = (val) => {
@@ -340,14 +339,14 @@
       item.querySelector(`#editForm-${entry.id}`).classList.remove('open');
     });
 
-    // Escape closes edit form
+    // Escape closes the edit form
     editNoteEl.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         item.querySelector(`#editForm-${entry.id}`).classList.remove('open');
       }
     });
 
-    // Save
+    // Save - isSaving prevents duplicate PUTs if clicked rapidly
     let isSaving = false;
     item.querySelector('.save-btn').addEventListener('click', async () => {
       if (isSaving) return;

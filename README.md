@@ -1,125 +1,77 @@
 # FrameLedger
 
-**Course:** INFO 251 — Web Development II | Spring 2026  
+**Course:** INFO 251 - Web Development II - Spring 2026  
 **Team:** LOEUNG Soxavin, LACH Sovitou  
 **Group size:** 2 members  
 **Repository:** https://github.com/Soxavin/WebDev-II-FinalProject-FrameLedger
 
 ---
 
-## What is it?
+## Overview
 
-FrameLedger is a film tracking app we built from scratch. You can search for any movie, browse by genre and rating, pull up a full detail page with the trailer and reviews, and keep a personal watchlist where you can set a status, leave notes, and give it your own star rating.
+FrameLedger is a film tracking web app built from scratch for the Web Development II final project. You can search for any movie, browse by genre and rating, view a full detail page with the trailer and reviews, and maintain a personal watchlist where you can set a status, leave notes, and give each film your own star rating.
 
-The whole thing runs in the browser: no backend, no frameworks, just HTML, CSS, and vanilla JavaScript talking to two external APIs (TMDB and MockAPI).
+The app runs entirely in the browser with no backend or framework — just HTML, CSS, and vanilla JavaScript communicating with two external APIs (TMDB and MockAPI).
 
 ---
 
 ## Tech Stack
 
-- **Languages:** HTML5, CSS3, JavaScript (ES6+) (no frameworks, no build tools)
+- **Languages:** HTML5, CSS3, JavaScript (ES6+)
 - **APIs:** TMDB for movie data, MockAPI for watchlist persistence
 - **Browser APIs used:** `fetch`, `localStorage`, `URL`, `URLSearchParams`, `history.replaceState`, `Promise.all`
-- Runs entirely in the browser : static files, no server required beyond a simple local file server
+- **Deployment:** Fully client-side; no build step or server required beyond a local file server for development
 
 ---
 
 ## Pages
 
-**Home (`index.html`)** : two modes in one page. Search mode does a live debounced search against TMDB as you type, keeps your last 5 searches in localStorage, and lets you page through results. Discover mode lets you filter by genre and minimum rating, sort however you want, or just hit Surprise Me and see what comes up.
+**Home (`index.html`)** - Two modes in one page. Search mode performs a live debounced search against TMDB as you type and keeps your last 5 searches in localStorage. Discover mode lets you filter by genre and minimum rating, or use Surprise Me to get a random result.
 
-**Movie detail (`pages/movie.html`)** : pulls the poster, backdrop, title, tagline, runtime, genres, and overview, then fires off 3 more requests in parallel for the trailer, similar films, and audience reviews. All four TMDB calls happen at the same time via `Promise.all`, so the page loads fast. If a movie is already in your watchlist it tells you; otherwise you can add it with a status and an optional note.
+**Movie detail (`pages/movie.html`)** - Displays the poster, backdrop, trailer, similar films, and audience reviews. All four TMDB requests are fired in parallel using `Promise.all`, keeping load time low. Films can be added to the watchlist directly from this page.
 
-**Watchlist (`pages/watchlist.html`)** : shows everything you've saved with a stats bar at the top (total, want to watch, watching, completed). You can filter by status, sort four different ways, inline-edit any entry, and delete with a confirmation modal. Stats and counts update immediately after every change without touching the server again.
+**Watchlist (`pages/watchlist.html`)** - Lists everything saved, with a stats bar showing totals by status. Entries can be filtered, sorted four ways, inline-edited, or deleted via a confirmation modal. Counts update immediately after each change.
 
 ---
 
-## How it's structured
+## Project Structure
 
-We split the JavaScript into 8 files so each one has one job:
+The JavaScript is split into 8 files, each with a single responsibility:
 
-| File | What it does |
+| File | Responsibility |
 |---|---|
-| `config.js` | API keys and base URLs : one place to change them |
+| `config.js` | API keys and base URLs |
 | `tmdb.js` | All TMDB requests, wrapped in a private `request()` function |
-| `watchlist.js` | MockAPI CRUD : GET, POST, PUT, DELETE |
-| `ui.js` | Shared stuff: Toast notifications, Spinner, card builder, form validation, `escapeHtml` |
-| `search.js` | Home page search, debounce, history chips, pagination |
-| `discover.js` | Genre/rating filters, Surprise Me, mode switching |
-| `movie.js` | Detail page : parallel fetch, trailer, reviews, watchlist form |
-| `watchlist-page.js` | Watchlist UI : filter, sort, inline edit, delete, stats, star picker |
+| `watchlist.js` | MockAPI CRUD operations - GET, POST, PUT, DELETE |
+| `ui.js` | Shared helpers: Toast notifications, Spinner, card builder, form validation, `escapeHtml` |
+| `search.js` | Home page search, debounce timer, history chips, pagination |
+| `discover.js` | Genre and rating filters, Surprise Me, mode switching |
+| `movie.js` | Detail page - parallel fetch, trailer, reviews, watchlist form |
+| `watchlist-page.js` | Watchlist UI - filter, sort, inline edit, delete modal, stats, star picker |
 
-They load in this order on every page: `config.js → tmdb.js → watchlist.js → ui.js → [page script]`. Each file depends on everything before it, so the order matters.
-
-```
-frameledger/
-├── index.html
-├── css/
-│   └── style.css
-├── js/
-│   ├── config.js
-│   ├── tmdb.js
-│   ├── watchlist.js
-│   ├── ui.js
-│   ├── search.js
-│   ├── discover.js
-│   ├── movie.js
-│   └── watchlist-page.js
-└── pages/
-    ├── movie.html
-    └── watchlist.html
-```
+Load order on every page: `config.js → tmdb.js → watchlist.js → ui.js → [page script]`. Each file depends on the ones before it, so the order is fixed.
 
 ---
 
 ## APIs
 
-**TMDB** is the main data source; movie search, details, trailers, similar films, genre lists, and reviews. Free public REST API.
+**TMDB** is the primary data source, used for movie search, details, trailers, similar films, genre lists, and reviews. It is a free public REST API.
 
 - Base URL: `https://api.themoviedb.org/3`
-- Auth: `?api_key=` query param
+- Auth: `?api_key=` query parameter
 - Docs: https://developer.themoviedb.org
 
-**MockAPI** is the persistence layer. It gives us a live REST endpoint that works like a real database so we can actually demo POST, PUT, and DELETE without building a server.
+**MockAPI** serves as the persistence layer. It provides a live REST endpoint that supports full CRUD, allowing the app to demonstrate POST, PUT, and DELETE without requiring a custom backend.
 
 - Base URL: `https://69beacb317c3d7d97792ae6c.mockapi.io`
-- No auth required
+- No authentication required
 - Docs: https://mockapi.io
-
-Each watchlist entry looks like this:
-
-```json
-{
-  "id":          "auto-generated",
-  "tmdbId":      "550",
-  "title":       "Fight Club",
-  "posterPath":  "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
-  "releaseYear": "1999",
-  "rating":      "8.4",
-  "status":      "Completed",
-  "note":        "Rewatch every year.",
-  "userRating":  5,
-  "addedAt":     "2026-03-21T10:30:00.000Z"
-}
-```
-
-TMDB endpoints we use:
-
-| Endpoint | Function | Used in |
-|---|---|---|
-| `/search/movie` | `searchMovies()` | `search.js` |
-| `/movie/:id` | `getMovieDetails()` | `movie.js` |
-| `/movie/:id/videos` | `getMovieVideos()` | `movie.js` |
-| `/movie/:id/similar` | `getSimilarMovies()` | `movie.js` |
-| `/movie/:id/reviews` | `getMovieReviews()` | `movie.js` |
-| `/discover/movie` | `discoverMovies()` | `discover.js` |
-| `/genre/movie/list` | `getGenres()` | `discover.js` |
 
 ---
 
-## A few things worth noting
+## Technical Decisions
 
-**Parallel fetching on the detail page.** Instead of chaining four awaits, we fire all four TMDB requests at the same time:
+**Parallel fetching on the detail page.** The movie detail page needs data from four separate TMDB endpoints. Rather than awaiting each one sequentially, all four requests are fired at the same time using `Promise.all`:
 
 ```javascript
 const [movie, videos, similar, reviews] = await Promise.all([
@@ -130,15 +82,15 @@ const [movie, videos, similar, reviews] = await Promise.all([
 ]);
 ```
 
-Cuts load time from roughly 1200ms sequential down to around 300ms.
+Sequential requests take roughly 1200ms; running them in parallel brings this down to around 300ms.
 
-**Debouncing.** The search input doesn't fire a request on every keystroke, it waits for a 400ms pause. Keeps the API call count reasonable while the results still feel live.
+**Debouncing the search input.** Without debouncing, a live search would fire a new TMDB request on every keystroke. A 400ms debounce timer means the request only goes out once the user pauses typing, which keeps the API usage reasonable while the results still feel responsive.
 
-**Double-submit guards.** `isSubmitting`, `isSaving`, and `isDeleting` flags make sure rapid clicks don't fire duplicate POST/PUT/DELETE requests.
+**Double-submit guards.** Any action that triggers a POST, PUT, or DELETE sets a boolean flag (`isSubmitting`, `isSaving`, or `isDeleting`) before the request fires and clears it in the `finally` block. This prevents duplicate requests from rapid clicks or slow network responses.
 
-**XSS protection.** Everything from the API or from user input gets passed through `escapeHtml()` before going into `innerHTML`. Movie titles and review text from TMDB can contain arbitrary characters.
+**XSS protection via `escapeHtml()`.** All content from external APIs or user input is passed through `escapeHtml()` before being written to `innerHTML`. The function creates a temporary DOM text node and reads back `.innerHTML`, letting the browser handle the escaping. This covers cases like movie titles or review text that may contain special characters.
 
-**Error handling.** Every `fetch()` is in a `try/catch/finally`. The `finally` block always resets the UI (re-enables buttons, clears loading states) so nothing gets stuck. Failed requests show an inline error message and a toast, the page never just goes blank.
+**`try/catch/finally` on every fetch.** The `finally` block runs regardless of whether the request succeeds or fails, ensuring buttons are always re-enabled and loading states are always cleared. Errors show an inline message and a toast notification so the user knows what happened.
 
 ---
 
@@ -146,7 +98,7 @@ Cuts load time from roughly 1200ms sequential down to around 300ms.
 
 ### 1. Add your API keys
 
-Open `js/config.js` and fill in:
+Open `js/config.js` and fill in your credentials:
 
 ```javascript
 const CONFIG = {
@@ -158,64 +110,11 @@ const CONFIG = {
 };
 ```
 
-Get a free TMDB key at https://www.themoviedb.org/settings/api
+A free TMDB API key can be obtained at https://www.themoviedb.org/settings/api
 
-### 2. Serve it locally
+### 2. Run it locally
 
-Don't open the HTML files directly in the browser; Safari and some others block `fetch()` on local file paths. Use a local server instead:
-
-```bash
-python3 -m http.server 8080
-```
-
-Then open `http://localhost:8080`. In VS Code you can also right-click `index.html` → Open with Live Server.
-
----
-
-## Demo flow
-
-This hits all four HTTP methods in about two minutes:
-
-1. Search for a film: results load live as you type *(TMDB GET)*
-2. Click a card: detail page loads with trailer, similar films, reviews *(4 TMDB GETs in parallel)*
-3. Add to Watchlist: pick a status, write a note, submit *(MockAPI POST)*
-4. Open Watchlist: your entry shows up, stats update *(MockAPI GET)*
-5. Hit edit: change status to Completed, give it 5 stars, save *(MockAPI PUT)*
-6. Delete it: confirm in the modal, gone, stats drop *(MockAPI DELETE)*
-7. Switch to Discover: filter by genre, try Surprise Me *(TMDB GET)*
-
----
-
-## Things we ran into
-
-**Safari blocking fetch on local files.** The first time we tested in Safari everything was broken, no errors in the console, just no data. Turned out Safari blocks fetch() when you open an HTML file directly from the filesystem. Running through a local server fixed it.
-
-**Star picker clicks not registering.** We were attaching event listeners with `document.getElementById()` before the element had been added to the DOM, so it returned null and the listeners never attached. Switching to `item.querySelector()`, which searches within the element itself regardless of whether it's in the document yet, sorted it.
-
-**`getParam is not defined` breaking both pages.** There was a duplicate `const cls` declaration in `ui.js` that caused a silent syntax error when the file loaded. Since `ui.js` never finished loading, `getParam` was never defined. It took a while to trace because the error message didn't mention `getParam` at all. Removing the duplicate fixed it.
-
-**Search and Discover fighting over the pagination buttons.** Both modes use the same prev/next buttons but need different click handlers. We ended up having `discover.js` take ownership of the buttons with `.onclick` when you switch to Discover, then release them (`onclick = null`) when you switch back, leaving the `addEventListener` handlers from `search.js` intact underneath.
-
-**Using AI to get unstuck.** A few times we genuinely had no idea what was going wrong; the code looked right, no obvious errors, and we'd been staring at it too long to see it clearly. In those cases we walked through the problem with Claude to help trace the issue. It was mostly useful for debugging things like the `getParam` crash and a couple of other logic bugs where a second pair of eyes helped more than another hour of guessing.
-
----
-
-## What we learned
-
-Probably the biggest takeaway was how much splitting JS into separate files helps. When something broke, we didn't have to dig through hundreds of lines, each file had one job so we knew exactly where to look.
-
-`Promise.all` took a bit to get comfortable with but it was worth it. The detail page would've felt slow if we'd loaded everything one after another.
-
-Error handling is the kind of thing that's easy to skip and annoying to add later. Setting up `try/catch/finally` from the start meant we never had buttons stuck in a loading state or pages that just went blank.
-
-If we had more time:
-
-- Create 'User accounts' functionality; right now everyone's watchlist goes to the same MockAPI endpoint so nothing is actually private
-- Some kind of fallback for when MockAPI goes down
-- A proper watch history separate from the active watchlist
-- Better mobile layout for the inline edit form
-- Improved look and more responsive website
-- Implement more unique and fun features that would be feasible to add for the website
+In VS Code, right-click `index.html` and select **Open with Live Server** (requires the Live Server extension).
 
 ---
 
@@ -223,20 +122,27 @@ If we had more time:
 
 | Developer | Contributions |
 |---|---|
-| LOEUNG Soxavin | Project architecture, TMDB API integration, shared UI utilities, home page (search + discover), movie detail page, CSS |
-| LACH Sovitou | MockAPI CRUD integration, watchlist page, discover mode filters and Surprise Me feature |
+| LOEUNG Soxavin | Project architecture, MockAPI CRUD integration, TMDB API integration, home page (search + discover), movie detail page |
+| LACH Sovitou | CSS, watchlist page, shared UI utilities (`ui.js`), discover mode filters and Surprise Me feature |
 
 ---
 
 ## References
 
-- MDN Web Docs - DOM APIs, `fetch`, `localStorage`, `Promise`
-- TMDB API documentation - https://developer.themoviedb.org
-- MockAPI documentation - https://mockapi.io/docs
-- YouTube IFrame Player API - for the privacy-enhanced trailer embed (`youtube-nocookie.com`)
+Anthropic. (2026). *Claude* (Claude Sonnet 4.6) [Large language model]. https://claude.ai
+
+Carrois Apostrophe. (2012). *Share Tech Mono* [Font]. Google Fonts. https://fonts.google.com/specimen/Share+Tech+Mono
+
+MockAPI. (n.d.). *MockAPI: REST API prototyping tool*. https://mockapi.io
+
+Mozilla. (n.d.). *MDN Web Docs: JavaScript reference*. https://developer.mozilla.org/en-US/docs/Web/JavaScript
+
+Sørensen, C. E. (2011). *Playfair Display* [Font]. Google Fonts. https://fonts.google.com/specimen/Playfair+Display
+
+The Movie Database. (n.d.). *TMDB API documentation*. https://developer.themoviedb.org
 
 ---
 
-## A note on integrity
+## Academic Integrity
 
-Everything here was written by us at our own discretion. We did use Claude a few times when we were genuinely stuck and couldn't figure out what was going wrong, mainly to help trace bugs and errors, not to mainly write code for us. We still made use of AI to help us with coding for parts where we were unable to proceed. For documentation we mostly used MDN, the TMDB docs, and MockAPI's docs. This project makes use of the TMDB API.
+This project was completed by us. Claude was used on occasions, mainly to help debug errors when we were stuck, to improve and refactor code and ideas, and as a reference for documentation. The TMDB and MockAPI docs were referenced throughout development.

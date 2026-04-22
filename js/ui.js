@@ -1,36 +1,35 @@
 // =============================================
-//  ui.js — Shared UI Utilities
+//  ui.js - Shared UI Utilities
 //
-//  PURPOSE:
 //  Contains reusable helper functions and objects
-//  that are used across multiple pages. Loading
-//  this file once makes these tools available
-//  globally to search.js, movie.js, etc.
+//  used across multiple pages. Loading this file
+//  once makes these tools available globally to
+//  search.js, movie.js, etc.
 //
-//  WHY SHARED?
-//  Without this file, we'd duplicate code like
-//  card-building and toast logic in every page's
-//  script. Centralising it keeps things DRY
-//  (Don't Repeat Yourself) and easier to maintain.
+//  Why share these?
+//  Without this file we'd have to duplicate things
+//  like card-building and toast logic in every page
+//  script. Keeping it here makes it easier to update
+//  in one place.
 //
-//  EXPORTS (global):
-//  - Toast        — success/error notification system
-//  - Spinner      — loading indicator helpers
-//  - StateMessage — empty/error state renderer
-//  - buildMovieCard — creates a movie card DOM element
-//  - Validate     — form validation helpers
-//  - statusBadge  — renders a coloured status pill
-//  - escapeHtml   — XSS protection for user content
-//  - truncate     — shortens strings with ellipsis
-//  - getParam     — reads URL query parameters
-//  - setActiveNav — highlights the current nav link
+//  Exports (global):
+//  - Toast        - success/error notification system
+//  - Spinner      - loading indicator helpers
+//  - StateMessage - empty/error state renderer
+//  - buildMovieCard - creates a movie card DOM element
+//  - Validate     - form validation helpers
+//  - statusBadge  - renders a coloured status pill
+//  - escapeHtml   - XSS protection for user content
+//  - truncate     - shortens strings with ellipsis
+//  - getParam     - reads URL query parameters
+//  - setActiveNav - highlights the current nav link
 //
-//  DEPENDS ON: config.js, tmdb.js (for posterUrl)
+//  Depends on: config.js, tmdb.js (for posterUrl)
 // =============================================
 
 
 // =============================================
-//  Toast — Notification System
+//  Toast - Notification System
 //
 //  Shows brief, auto-dismissing messages in the
 //  bottom-right corner of the screen.
@@ -50,7 +49,7 @@ const Toast = (() => {
     document.body.appendChild(container);
   };
 
-  // Internal: creates and auto-removes a single toast
+  // Creates and auto-removes a single toast message
   const show = (message, type = 'default', duration = 3000) => {
     // Lazy-initialise the container on first use
     if (!container) init();
@@ -60,7 +59,7 @@ const Toast = (() => {
     toast.textContent = message;
     container.appendChild(toast);
 
-    // After `duration` ms, fade out then remove from DOM
+    // After `duration` ms, fade out then remove from the DOM
     setTimeout(() => {
       toast.style.animation = 'fadeOut 0.25s ease forwards';
       setTimeout(() => toast.remove(), 260);
@@ -76,7 +75,7 @@ const Toast = (() => {
 
 
 // =============================================
-//  Spinner — Loading Indicator
+//  Spinner - Loading Indicator
 //
 //  Injects a CSS spinner + message into a
 //  container element, replacing its contents.
@@ -101,10 +100,10 @@ const Spinner = {
 
 
 // =============================================
-//  StateMessage — Empty / Error State
+//  StateMessage - Empty / Error State
 //
 //  Renders a centred icon + message inside a
-//  container. Used when there are no results,
+//  container. Used when there are no results
 //  or when an API call fails.
 //
 //  Usage:
@@ -122,51 +121,49 @@ const StateMessage = {
 
 
 // =============================================
-//  buildMovieCard() — Movie Card DOM Builder
+//  buildMovieCard() - Movie Card DOM Builder
 //
 //  Dynamically creates a clickable movie card
 //  element from a TMDB movie object. Returns
 //  an <a> element ready to be appended to a grid.
 //
-//  WHY DYNAMIC CREATION?
-//  We don't know how many movies will be returned
-//  by a search. Creating cards in JS lets us
-//  generate as many as needed without hardcoding
-//  HTML. This is a core DOM manipulation pattern.
+//  Why build it in JS?
+//  We don't know how many movies the API will
+//  return, so we create cards dynamically instead
+//  of hardcoding HTML. This is a core DOM
+//  manipulation pattern.
 //
-//  @param {object} movie       — TMDB movie object
-//  @param {string} linkPrefix  — path to movie.html
-//                                (differs based on
+//  @param {object} movie       - TMDB movie object
+//  @param {string} linkPrefix  - path to movie.html
+//                                (differs depending on
 //                                 which page we're on)
 //  @returns {HTMLElement} <a> card element
 // =============================================
 const buildMovieCard = (movie, linkPrefix = 'pages/movie.html') => {
-  // Build the poster image URL using the TMDB CDN helper
   // w342 is a good balance of quality vs file size for grid cards
   const posterPath = TMDB.posterUrl(movie.poster_path, 'w342');
 
-  // Extract just the year from the full date string (e.g. '2023-07-15' → '2023')
+  // Extract just the year from the full date string (e.g. '2023-07-15' becomes '2023')
   const year = movie.release_date
     ? movie.release_date.substring(0, 4)
-    : '—';
+    : '-';
 
-  // Only show a rating if the film actually has votes
-  // vote_average of 0.0 with no votes is meaningless data
+  // Only show a rating if the film actually has votes.
+  // A 0.0 with no votes is meaningless data.
   const rating = movie.vote_count > 0 && movie.vote_average != null
     ? movie.vote_average.toFixed(1)
-    : '—';
+    : '-';
 
-  // Create the card as an anchor tag so the whole card is clickable
+  // Create the card as an anchor tag so the whole card is clickable.
   // If there's a current search query in the URL, pass it along so
-  // the back button on the detail page can restore results
+  // the back button on the detail page can restore the results.
   const card = document.createElement('a');
   card.className = 'movie-card';
   const currentQ = new URLSearchParams(window.location.search).get('q') || '';
   const qParam   = currentQ ? `&q=${encodeURIComponent(currentQ)}` : '';
   card.href = `${linkPrefix}?id=${movie.id}${qParam}`;
 
-  // Use template literals for clean, readable HTML generation
-  // escapeHtml() protects against XSS from movie titles with special chars
+  // escapeHtml() protects against XSS from movie titles with special characters
   card.innerHTML = `
     ${posterPath
       ? `<img class="movie-card__poster" src="${posterPath}" alt="${escapeHtml(movie.title)}" loading="lazy">`
@@ -185,15 +182,15 @@ const buildMovieCard = (movie, linkPrefix = 'pages/movie.html') => {
 
 
 // =============================================
-//  Validate — Form Validation Helpers
+//  Validate - Form Validation Helpers
 //
 //  Provides reusable validation logic and
 //  DOM helpers for showing/clearing errors.
 //  Used in search.js, movie.js, watchlist-page.js.
 //
-//  WHY CLIENT-SIDE VALIDATION?
+//  Why client-side validation?
 //  It gives users immediate feedback without
-//  waiting for a server round-trip. It also
+//  waiting for a server round-trip, and also
 //  prevents unnecessary API calls with bad data.
 // =============================================
 const Validate = {
@@ -216,8 +213,8 @@ const Validate = {
     errorEl.classList.remove('visible');
   },
 
-  // Clears all error states in a form at once
-  // Called before re-validating on each submit
+  // Clears all error states in a form at once.
+  // Called before re-validating on each submit.
   clearAll: (formEl) => {
     formEl.querySelectorAll('.form-control').forEach((f) => f.classList.remove('error'));
     formEl.querySelectorAll('.field-error').forEach((e) => e.classList.remove('visible'));
@@ -226,13 +223,13 @@ const Validate = {
 
 
 // =============================================
-//  statusBadge() — Status Pill Builder
+//  statusBadge() - Status Pill Builder
 //
 //  Returns an HTML string for a coloured badge
 //  representing a watchlist status.
 //  The CSS class suffix maps to distinct colours.
 //
-//  @param {string} status — stored English value
+//  @param {string} status - stored English value
 //  @returns {string} HTML string
 // =============================================
 const statusBadge = (status) => {
@@ -247,14 +244,14 @@ const statusBadge = (status) => {
 
 
 // =============================================
-//  setActiveNav() — Nav Link Highlighter
+//  setActiveNav() - Nav Link Highlighter
 //
 //  Compares the current page filename against
-//  each nav link's href, and adds the 'active'
+//  each nav link's href and adds the 'active'
 //  class to the matching link.
 //
-//  WHY STRIP QUERY PARAMS?
-//  Links like 'index.html?mode=discover' would
+//  Why strip query params?
+//  A link like 'index.html?mode=discover' would
 //  fail a direct comparison with 'index.html'
 //  unless we strip the query string first.
 // =============================================
@@ -269,11 +266,11 @@ const setActiveNav = () => {
 
 
 // =============================================
-//  escapeHtml() — XSS Protection
+//  escapeHtml() - XSS Protection
 //
 //  Converts a plain string into safe HTML by
 //  escaping special characters like < > & " '
-//  This MUST be used whenever displaying
+//  This must be used whenever displaying
 //  user-provided or API-provided text inside
 //  innerHTML to prevent script injection.
 //
@@ -281,8 +278,8 @@ const setActiveNav = () => {
 //  @returns {string} escaped HTML-safe string
 // =============================================
 const escapeHtml = (str) => {
-  // We use the browser's own text node to do the escaping —
-  // this is safer and more reliable than manual string replace
+  // We let the browser's own text node handle the escaping.
+  // It's safer and more reliable than manual string replace.
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(str || ''));
   return div.innerHTML;
@@ -290,7 +287,7 @@ const escapeHtml = (str) => {
 
 
 // =============================================
-//  truncate() — String Shortener
+//  truncate() - String Shortener
 //
 //  Shortens a string to `max` characters and
 //  appends an ellipsis if it was truncated.
@@ -305,7 +302,7 @@ const truncate = (str, max) =>
 
 
 // =============================================
-//  getParam() — URL Query Parameter Reader
+//  getParam() - URL Query Parameter Reader
 //
 //  Reads a value from the current page's URL.
 //  e.g. for URL 'movie.html?id=550', calling
