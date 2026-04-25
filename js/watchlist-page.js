@@ -1,34 +1,7 @@
-// =============================================
-//  watchlist-page.js - Watchlist Page Logic
-//
-//  Controls everything on watchlist.html.
-//  Loads the user's watchlist from MockAPI,
-//  renders it as a list of items, and handles
-//  filtering, sorting, inline editing, deletion,
-//  and the stats dashboard.
-//
-//  CRUD operations shown here:
-//  GET    - load all entries on page init
-//  PUT    - save edits via inline edit form
-//  DELETE - remove entry after modal confirmation
-//  (POST is handled on movie.html)
-//
-//  Key features:
-//  - Skeleton loader while data is fetching
-//  - Filter tabs (All / Want to Watch / Watching / Completed)
-//  - Sort dropdown (newest, oldest, A-Z, highest rated)
-//  - Inline edit form per entry (no page reload)
-//  - Confirmation modal before deleting
-//  - Stats dashboard (total, per-status counts, progress bar)
-//  - Stats always stay in sync after any edit/delete
-//  - Double-submit guards on save and delete
-//  - Escape key closes modals and edit forms
-//
-//  Depends on: config.js, tmdb.js, watchlist.js, ui.js
-// =============================================
+// watchlist-page.js - Watchlist page logic.
+// Handles loading, filtering, sorting, editing, and deleting entries.
 
 (() => {
-  // ---- DOM References ------------------------
   const listEl     = document.getElementById('watchlistList');
   const loadingEl  = document.getElementById('wlLoading');
   const emptyEl    = document.getElementById('wlEmpty');
@@ -38,16 +11,14 @@
   const filterTabs = document.querySelectorAll('.filter-tab');
   const sortSelect = document.getElementById('wlSortSelect');
 
-  // Delete confirmation modal elements
+  // Delete confirmation modal
   const deleteModal   = document.getElementById('deleteModal');
   const deleteText    = document.getElementById('deleteModalText');
   const deleteConfirm = document.getElementById('deleteModalConfirm');
   const deleteCancel  = document.getElementById('deleteModalCancel');
   const deleteClose   = document.getElementById('deleteModalClose');
 
-  // ---- Preference Persistence ----------------
-  // Saves and restores the active filter/sort across page reloads
-  // using localStorage, so the user comes back to the same view.
+  // Saves and restores the active filter/sort using localStorage
   const PREFS_KEY = 'wl_prefs';
   const loadPrefs = () => {
     try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
@@ -56,7 +27,6 @@
     localStorage.setItem(PREFS_KEY, JSON.stringify({ filter: activeFilter, sort: activeSort }));
   };
 
-  // ---- State ---------------------------------
   let allEntries      = [];
   const savedPrefs    = loadPrefs();
   let activeFilter    = savedPrefs.filter || 'all';
@@ -64,7 +34,6 @@
   let pendingDeleteId = null;
   let isDeleting      = false;
 
-  // ---- Sort Entries --------------------------
   const sortEntries = (entries) => {
     const sorted = [...entries];
     if (activeSort === 'newest') {
@@ -79,15 +48,13 @@
     return sorted;
   };
 
-  // ---- Star Display Builder ------------------
   const buildStarDisplay = (rating) => {
     return [1,2,3,4,5].map(n =>
       `<span class="star-display ${n <= rating ? 'star-display--filled' : ''}">★</span>`
     ).join('');
   };
 
-  // ---- Stats Dashboard -----------------------
-  // Shows total films and per-status counts.
+  // Stats dashboard - shows total and per-status counts
   const renderStats = (entries) => {
     if (!entries.length) {
       document.getElementById('statsSection').style.display = 'none';
@@ -108,22 +75,8 @@
     document.getElementById('statsSection').style.display = 'block';
     document.getElementById('statsDivider').style.display = 'block';
 
-    // Progress bar
-    const progressWrap = document.getElementById('progressBarWrap');
-    if (progressWrap && total > 0) {
-      const wantPct      = (want      / total * 100).toFixed(1);
-      const watchingPct  = (watching  / total * 100).toFixed(1);
-      const completedPct = (completed / total * 100).toFixed(1);
-
-      document.getElementById('progressWant').style.width      = `${wantPct}%`;
-      document.getElementById('progressWatching').style.width  = `${watchingPct}%`;
-      document.getElementById('progressCompleted').style.width = `${completedPct}%`;
-
-      progressWrap.style.display = 'block';
-    }
   };
 
-  // ---- Delete Modal --------------------------
   const openDeleteModal = (id, title) => {
     pendingDeleteId = id;
     deleteText.textContent = `Remove "${title}" from your watchlist?`;
@@ -168,7 +121,7 @@
     }
   });
 
-  // ---- Skeleton Loader -----------------------
+  // Skeleton loader - shows placeholder cards while data is fetching
   const showSkeleton = (count = 4) => {
     listEl.innerHTML  = '';
     listEl.style.display = 'flex';
@@ -185,7 +138,7 @@
     }
   };
 
-  // ---- Build Watchlist Item ------------------
+  // Builds a single watchlist item element including the inline edit form
   const buildItem = (entry) => {
     const posterSrc = entry.posterPath
       ? TMDB.posterUrl(entry.posterPath, 'w92')
@@ -264,7 +217,7 @@
         </div>
       </div>`;
 
-    // Character counter for edit note
+    // Character counter for the edit note
     const editNoteEl  = item.querySelector('.edit-note');
     const editCountEl = item.querySelector(`#editCharCount-${entry.id}`);
     editNoteEl.addEventListener('input', () => {
@@ -275,8 +228,7 @@
       }
     });
 
-    // Star picker interaction:
-    // hovering lights up stars up to that point (preview), clicking commits the value
+    // Star picker: hovering previews the rating, clicking commits it
     const starPicker = item.querySelector(`#starPicker-${entry.id}`);
     if (starPicker) {
       const updateActiveStars = (val) => {
@@ -329,24 +281,21 @@
       }
     }
 
-    // Edit button
     item.querySelector('.edit-btn').addEventListener('click', () => {
       item.querySelector(`#editForm-${entry.id}`).classList.toggle('open');
     });
 
-    // Cancel
     item.querySelector('.cancel-edit-btn').addEventListener('click', () => {
       item.querySelector(`#editForm-${entry.id}`).classList.remove('open');
     });
 
-    // Escape closes the edit form
     editNoteEl.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         item.querySelector(`#editForm-${entry.id}`).classList.remove('open');
       }
     });
 
-    // Save - isSaving prevents duplicate PUTs if clicked rapidly
+    // isSaving prevents duplicate PUTs if the save button is clicked rapidly
     let isSaving = false;
     item.querySelector('.save-btn').addEventListener('click', async () => {
       if (isSaving) return;
@@ -394,7 +343,6 @@
       }
     });
 
-    // Delete
     item.querySelector('.delete-btn').addEventListener('click', () => {
       openDeleteModal(entry.id, entry.title);
     });
@@ -402,7 +350,6 @@
     return item;
   };
 
-  // ---- Render List ---------------------------
   const renderList = () => {
     let filtered = activeFilter === 'all'
       ? allEntries
@@ -429,8 +376,7 @@
     countEl.textContent = `${filtered.length} film${filtered.length !== 1 ? 's' : ''}`;
   };
 
-  // ---- Filter Tabs ---------------------------
-  // Restore saved active tab on page load
+  // Filter tabs - restore the saved active tab on load
   filterTabs.forEach((tab) => {
     if (tab.dataset.filter === activeFilter) {
       filterTabs.forEach((t) => t.classList.remove('active'));
@@ -445,9 +391,7 @@
     });
   });
 
-  // ---- Sort Select ---------------------------
   if (sortSelect) {
-    // Restore saved sort value on page load
     sortSelect.value = activeSort;
     sortSelect.addEventListener('change', () => {
       activeSort = sortSelect.value;
@@ -456,7 +400,6 @@
     });
   }
 
-  // ---- Initial Load --------------------------
   const init = async () => {
     showSkeleton(5);
     loadingEl.style.display = 'none';

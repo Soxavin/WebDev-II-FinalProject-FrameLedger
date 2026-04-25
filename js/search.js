@@ -1,43 +1,6 @@
-// =============================================
-//  search.js - Home Page Search Logic
-//
-//  Controls the Search mode on the home page.
-//  Handles user input, form validation, calling
-//  the TMDB search API, rendering results as
-//  movie cards, and managing pagination.
-//
-//  How it works:
-//  1. User types - debounce timer starts (400ms)
-//  2. If user keeps typing, timer resets each keystroke
-//  3. When user pauses for 400ms, doSearch() fires
-//  4. Pressing Enter or clicking Search fires immediately
-//  5. renderResults() builds movie cards from the data
-//  6. Pagination buttons let the user browse pages
-//
-//  Debouncing explained:
-//  Instead of firing a request on every keystroke,
-//  we wait until the user stops typing for 400ms.
-//  This is done with setTimeout/clearTimeout:
-//    - On each input event, clear the previous timer
-//    - Set a new 400ms timer
-//    - Only the last timer actually completes
-//  This reduces API calls from ~10 per word typed
-//  down to 1 per completed word.
-//
-//  Keyboard shortcuts:
-//  '/'     - focus the search input from anywhere
-//  Escape  - clear the input and blur focus
-//
-//  Shares DOM with: discover.js
-//  Both scripts use #movieGrid, #pagination, etc.
-//  When Discover mode is active, discover.js takes
-//  over the pagination buttons via .onclick.
-//
-//  Depends on: config.js, tmdb.js, ui.js
-// =============================================
+// search.js - Home page search, debounce, and pagination.
 
 (() => {
-  // ---- DOM References ------------------------
   const form           = document.getElementById('searchForm');
   const input          = document.getElementById('searchInput');
   const clearBtn       = document.getElementById('searchClearBtn');
@@ -52,20 +15,16 @@
   const pageInfo       = document.getElementById('pageInfo');
   const resultsSection = document.getElementById('resultsSection');
 
-  // ---- State Variables -----------------------
-  let currentQuery  = '';    // The last successfully searched query
-  let currentPage   = 1;    // Current pagination page
-  let totalPages    = 1;    // Total pages returned by TMDB
-  let isSearching   = false; // Guard: prevents overlapping requests
-  let debounceTimer = null;  // Holds the setTimeout reference for debouncing
+  let currentQuery  = '';
+  let currentPage   = 1;
+  let totalPages    = 1;
+  let isSearching   = false;
+  let debounceTimer = null;
 
-  // ---- Debounce Delay ------------------------
-  // 400ms is the sweet spot: fast enough to feel live,
-  // slow enough to not fire on every keystroke
+  // 400ms is the sweet spot: fast enough to feel live, slow enough to not fire on every keystroke
   const DEBOUNCE_MS = 400;
-  const MIN_QUERY_LENGTH = 2; // Don't search single characters
+  const MIN_QUERY_LENGTH = 2;
 
-  // ---- Clear Button --------------------------
   const updateClearBtn = () => {
     if (clearBtn) {
       clearBtn.style.display = input.value.length > 0 ? 'flex' : 'none';
@@ -77,10 +36,9 @@
       input.value = '';
       input.focus();
       updateClearBtn();
-      clearTimeout(debounceTimer); // Cancel any pending debounced search
+      clearTimeout(debounceTimer);
       errorEl.classList.remove('visible');
       input.classList.remove('error');
-      // Reset results to initial state
       grid.innerHTML = '';
       initialState.style.display  = 'block';
       resultsHeader.style.display = 'none';
@@ -88,7 +46,6 @@
     });
   }
 
-  // ---- Validation ----------------------------
   const validateSearch = (query) => {
     if (!Validate.required(query)) {
       errorEl.textContent = 'Please enter a film title to search.';
@@ -101,9 +58,7 @@
     return true;
   };
 
-  // ---- Search History (localStorage) --------
-  // Stores last 5 unique searches as clickable chips.
-  // Persists across page loads via localStorage.
+  // Search history - stores last 5 unique searches as clickable chips in localStorage
   const HISTORY_KEY = 'fl_search_history';
   const MAX_HISTORY = 5;
 
@@ -119,7 +74,6 @@
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   };
 
-  // ---- Render Results ------------------------
   const renderResults = (movies, query, page, total) => {
     initialState.style.display = 'none';
     grid.innerHTML = '';
@@ -149,10 +103,9 @@
 
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Save successful search to history
     saveToHistory(query);
 
-    // Update URL with current query so card links can pass ?q= back.
+    // Update the URL with the current query so card links can pass ?q= back.
     // replaceState doesn't reload the page, just updates the address bar.
     if (page === 1) {
       const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}`;
@@ -160,7 +113,6 @@
     }
   };
 
-  // ---- API Fetch -----------------------------
   const doSearch = async (query, page) => {
     if (isSearching) return;
     isSearching = true;
@@ -182,14 +134,11 @@
     }
   };
 
-  // ---- Debounced Live Search -----------------
-  // Fires automatically as the user types, after a 400ms pause.
+  // Live search: fires after the user stops typing for 400ms.
   // Each keystroke clears the previous timer and starts a new one.
-  // Only the final timer (when user stops typing) completes.
   input.addEventListener('input', () => {
     updateClearBtn();
 
-    // Clear validation errors as user types
     if (input.value.trim()) {
       errorEl.classList.remove('visible');
       input.classList.remove('error');
@@ -197,7 +146,6 @@
 
     const query = input.value.trim();
 
-    // If input is cleared, reset to initial state
     if (!query) {
       clearTimeout(debounceTimer);
       grid.innerHTML = '';
@@ -207,7 +155,6 @@
       return;
     }
 
-    // Don't fire for very short queries (single characters)
     if (query.length < MIN_QUERY_LENGTH) return;
 
     // Cancel the previous timer and start a fresh one
@@ -219,21 +166,18 @@
     }, DEBOUNCE_MS);
   });
 
-  // ---- Form Submit (immediate) ---------------
-  // Pressing Enter or clicking Search fires immediately,
-  // bypassing the debounce delay for a snappier feel
+  // Form submit fires immediately, bypassing the debounce delay
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const query = input.value.trim();
     if (!validateSearch(query)) return;
 
-    clearTimeout(debounceTimer); // Cancel any pending debounced search
+    clearTimeout(debounceTimer);
     currentQuery = query;
     currentPage  = 1;
     doSearch(currentQuery, currentPage);
   });
 
-  // ---- Pagination ----------------------------
   const onPrev = () => {
     if (currentPage > 1) {
       currentPage--;
@@ -253,7 +197,7 @@
   prevBtn.addEventListener('click', onPrev);
   nextBtn.addEventListener('click', onNext);
 
-  // ---- Keyboard Shortcuts --------------------
+  // Keyboard shortcuts: '/' focuses the search input, Escape clears it
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       clearTimeout(debounceTimer);
@@ -280,7 +224,7 @@
     }
   });
 
-  // ---- URL Pre-fill --------------------------
+  // If arriving with ?q= in the URL, pre-fill and run the search
   const q = getParam('q');
   if (q) {
     input.value = q;
@@ -291,7 +235,7 @@
 
   updateClearBtn();
 
-  // ---- Search History Chips ------------------
+  // Search history chips
   const renderHistory = () => {
     const historyEl = document.getElementById('searchHistory');
     const chipsEl   = document.getElementById('searchHistoryChips');
@@ -321,12 +265,10 @@
     historyEl.style.display = input.value.length === 0 ? 'block' : 'none';
   };
 
-  // Show history on focus when empty
   input.addEventListener('focus', () => {
     if (!input.value.trim()) renderHistory();
   });
 
-  // Hide history on outside click
   document.addEventListener('click', (e) => {
     const historyEl = document.getElementById('searchHistory');
     if (historyEl && !historyEl.contains(e.target) && e.target !== input) {
