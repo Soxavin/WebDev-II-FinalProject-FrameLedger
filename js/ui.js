@@ -63,7 +63,7 @@ const buildMovieCard = (movie, linkPrefix = 'pages/movie.html') => {
   // w342 is a good balance of quality vs file size for grid cards
   const posterPath = TMDB.posterUrl(movie.poster_path, 'w342');
 
-  // Extract just the year from the full date string (e.g. '2023-07-15' -> '2023')
+  // date comes back as '2023-07-15' — we only want the year part
   const year = movie.release_date
     ? movie.release_date.substring(0, 4)
     : '-';
@@ -73,19 +73,17 @@ const buildMovieCard = (movie, linkPrefix = 'pages/movie.html') => {
     ? movie.vote_average.toFixed(1)
     : '-';
 
-  // Create the card as an anchor so the whole card is clickable.
-  // Pass the current search query along so the back button can restore results.
+  // whole card is a link — pass ?q= so the back button can restore the search
   const card = document.createElement('a');
   card.className = 'movie-card';
   const currentQ = new URLSearchParams(window.location.search).get('q') || '';
   const qParam   = currentQ ? `&q=${encodeURIComponent(currentQ)}` : '';
   card.href = `${linkPrefix}?id=${movie.id}${qParam}`;
 
-  // escapeHtml() protects against XSS from movie titles with special characters
   card.innerHTML = `
     ${posterPath
       ? `<img class="movie-card__poster" src="${posterPath}" alt="${escapeHtml(movie.title)}" loading="lazy">`
-      : `<div class="movie-card__poster-placeholder">🎬</div>`
+      : `<div class="movie-card__poster-placeholder"></div>`
     }
     <div class="movie-card__body">
       <div class="movie-card__title">${escapeHtml(movie.title)}</div>
@@ -115,7 +113,7 @@ const Validate = {
     errorEl.classList.remove('visible');
   },
 
-  // Clears all error states in a form at once, called before re-validating on submit
+  // reset all field errors before re-running validation
   clearAll: (formEl) => {
     formEl.querySelectorAll('.form-control').forEach((f) => f.classList.remove('error'));
     formEl.querySelectorAll('.field-error').forEach((e) => e.classList.remove('visible'));
@@ -144,8 +142,7 @@ const setActiveNav = () => {
 };
 
 
-// XSS guard - routes text through a DOM node so the browser handles all escaping.
-// Must be used before inserting any API or user content into innerHTML.
+// run any API or user text through this before putting it into innerHTML to prevent XSS
 const escapeHtml = (str) => {
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(str || ''));

@@ -1,8 +1,7 @@
-// watchlist.js - MockAPI CRUD module. GET, POST, PUT, DELETE for the watchlist resource.
+// watchlist.js - MockAPI CRUD for the watchlist resource.
 
 const WatchlistAPI = (() => {
-  // Builds the endpoint URL from CONFIG each time it's called,
-  // so changing the base URL or resource name in config.js updates all requests here.
+  // reads from CONFIG
   const baseUrl = () =>
     `${CONFIG.MOCKAPI_BASE_URL}/${CONFIG.MOCKAPI_RESOURCE}`;
 
@@ -20,8 +19,7 @@ const WatchlistAPI = (() => {
     return res.json();
   };
 
-  // Create a new watchlist entry (POST).
-  // Content-Type must be set to application/json so MockAPI parses the body correctly.
+  // Content-Type header is required or MockAPI won't parse the body
   const add = async (entry) => {
     const res = await fetch(baseUrl(), {
       method: 'POST',
@@ -43,7 +41,7 @@ const WatchlistAPI = (() => {
     return res.json();
   };
 
-  // Delete an entry permanently (DELETE)
+  // Delete an entry permanently
   const remove = async (id) => {
     const res = await fetch(`${baseUrl()}/${id}`, {
       method: 'DELETE',
@@ -52,9 +50,8 @@ const WatchlistAPI = (() => {
     return res.json();
   };
 
-  // Check if a film is already saved - used on the detail page to show
-  // "In Watchlist" instead of the Add button.
-  // Comparing as strings because MockAPI sometimes returns IDs as strings.
+  // used on the detail page to check if a film is already saved.
+  // string comparison because MockAPI IDs aren't always numbers
   const findByTmdbId = async (tmdbId) => {
     const all = await getAll();
     return all.find((entry) => String(entry.tmdbId) === String(tmdbId)) || null;

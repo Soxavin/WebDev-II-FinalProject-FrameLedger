@@ -505,16 +505,6 @@ h1, h2, h3, h4 {
   margin: 0 auto;
 }
 
-.detail-hero__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-position: center top;
-  opacity: 0.08;
-  filter: blur(4px);
-  pointer-events: none;
-}
 
 .detail-layout {
   display: grid;
@@ -705,6 +695,7 @@ h1, h2, h3, h4 {
   transition: all var(--transition);
   border: 1px solid transparent;
   font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -741,6 +732,8 @@ h1, h2, h3, h4 {
   color: var(--text-primary);
   background: var(--surface-2);
 }
+
+.delete-btn:hover { color: var(--red); border-color: var(--red); background: transparent; }
 
 .btn--danger {
   background: transparent;
@@ -934,7 +927,7 @@ h1, h2, h3, h4 {
 
 .status-badge {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 0.2rem 0.6rem;
@@ -1197,18 +1190,19 @@ h1, h2, h3, h4 {
   line-height: 1;
 }
 
-.stat-card--want      .stat-card__value { color: #7b9ee0; }
-.stat-card--watching  .stat-card__value { color: var(--gold); }
-.stat-card--completed .stat-card__value { color: #6db86d; }
 
 .stat-card__label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-align: center;
 }
+
+.stat-card--want      .stat-card__label { color: #7b9ee0; }
+.stat-card--watching  .stat-card__label { color: var(--gold); }
+.stat-card--completed .stat-card__label { color: #6db86d; }
 
 /* =============================================
    PAGE FADE-IN TRANSITION
@@ -1758,8 +1752,6 @@ h1, h2, h3, h4 {
 .discover-btn {
   align-self: flex-end;
   border-radius: var(--radius);
-  border: none;
-  padding: 0.75rem 1.5rem;
 }
 
 .surprise-btn {

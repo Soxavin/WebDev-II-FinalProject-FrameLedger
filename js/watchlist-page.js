@@ -1,5 +1,4 @@
-// watchlist-page.js - Watchlist page logic.
-// Handles loading, filtering, sorting, editing, and deleting entries.
+// watchlist-page.js - loads, filters, sorts, and manages watchlist entries.
 
 (() => {
   const listEl     = document.getElementById('watchlistList');
@@ -18,7 +17,7 @@
   const deleteCancel  = document.getElementById('deleteModalCancel');
   const deleteClose   = document.getElementById('deleteModalClose');
 
-  // Saves and restores the active filter/sort using localStorage
+  // remember the last filter/sort between page loads
   const PREFS_KEY = 'wl_prefs';
   const loadPrefs = () => {
     try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
@@ -54,7 +53,6 @@
     ).join('');
   };
 
-  // Stats dashboard - shows total and per-status counts
   const renderStats = (entries) => {
     if (!entries.length) {
       document.getElementById('statsSection').style.display = 'none';
@@ -121,7 +119,6 @@
     }
   });
 
-  // Skeleton loader - shows placeholder cards while data is fetching
   const showSkeleton = (count = 4) => {
     listEl.innerHTML  = '';
     listEl.style.display = 'flex';
@@ -138,7 +135,6 @@
     }
   };
 
-  // Builds a single watchlist item element including the inline edit form
   const buildItem = (entry) => {
     const posterSrc = entry.posterPath
       ? TMDB.posterUrl(entry.posterPath, 'w92')
@@ -151,7 +147,7 @@
     item.innerHTML = `
       ${posterSrc
         ? `<img class="watchlist-item__poster" src="${posterSrc}" alt="${escapeHtml(entry.title)}" loading="lazy">`
-        : `<div class="watchlist-item__poster-placeholder">🎬</div>`
+        : `<div class="watchlist-item__poster-placeholder"></div>`
       }
       <div class="watchlist-item__info">
         <a class="watchlist-item__title"
@@ -175,8 +171,8 @@
           : ''}
       </div>
       <div class="watchlist-item__actions">
-        <button class="btn btn--ghost btn--sm edit-btn"   data-id="${entry.id}" title="Edit">✏️</button>
-        <button class="btn btn--ghost btn--sm delete-btn" data-id="${entry.id}" title="Remove">🗑</button>
+        <button class="btn btn--ghost btn--sm edit-btn"   data-id="${entry.id}">Edit</button>
+        <button class="btn btn--ghost btn--sm delete-btn" data-id="${entry.id}">Remove</button>
       </div>
 
       <!-- Inline edit form - hidden by default, toggled by edit button -->
@@ -228,7 +224,7 @@
       }
     });
 
-    // Star picker: hovering previews the rating, clicking commits it
+    // hover previews the rating, clicking locks it in
     const starPicker = item.querySelector(`#starPicker-${entry.id}`);
     if (starPicker) {
       const updateActiveStars = (val) => {
@@ -295,7 +291,7 @@
       }
     });
 
-    // isSaving prevents duplicate PUTs if the save button is clicked rapidly
+    // guard against double-saving if the button gets clicked twice fast
     let isSaving = false;
     item.querySelector('.save-btn').addEventListener('click', async () => {
       if (isSaving) return;
@@ -376,7 +372,6 @@
     countEl.textContent = `${filtered.length} film${filtered.length !== 1 ? 's' : ''}`;
   };
 
-  // Filter tabs - restore the saved active tab on load
   filterTabs.forEach((tab) => {
     if (tab.dataset.filter === activeFilter) {
       filterTabs.forEach((t) => t.classList.remove('active'));

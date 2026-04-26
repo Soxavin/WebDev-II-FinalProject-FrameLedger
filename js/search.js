@@ -21,7 +21,7 @@
   let isSearching   = false;
   let debounceTimer = null;
 
-  // 400ms is the sweet spot: fast enough to feel live, slow enough to not fire on every keystroke
+  // 400ms feels fast enough to seem live without spamming the API on every keystroke
   const DEBOUNCE_MS = 400;
   const MIN_QUERY_LENGTH = 2;
 
@@ -58,7 +58,7 @@
     return true;
   };
 
-  // Search history - stores last 5 unique searches as clickable chips in localStorage
+  // keep the last 5 searches in localStorage as clickable chips
   const HISTORY_KEY = 'fl_search_history';
   const MAX_HISTORY = 5;
 
@@ -101,12 +101,12 @@
       paginationEl.style.display = 'none';
     }
 
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (page === 1) resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     saveToHistory(query);
 
-    // Update the URL with the current query so card links can pass ?q= back.
-    // replaceState doesn't reload the page, just updates the address bar.
+    // put the query in the URL so the back button can restore results.
+    // replaceState updates the address bar without reloading the page.
     if (page === 1) {
       const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}`;
       window.history.replaceState({}, '', newUrl);
@@ -134,8 +134,7 @@
     }
   };
 
-  // Live search: fires after the user stops typing for 400ms.
-  // Each keystroke clears the previous timer and starts a new one.
+  // debounced live search — each keystroke resets the timer
   input.addEventListener('input', () => {
     updateClearBtn();
 
@@ -157,7 +156,6 @@
 
     if (query.length < MIN_QUERY_LENGTH) return;
 
-    // Cancel the previous timer and start a fresh one
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       currentQuery = query;
@@ -166,7 +164,7 @@
     }, DEBOUNCE_MS);
   });
 
-  // Form submit fires immediately, bypassing the debounce delay
+  // hitting Enter skips the debounce and searches right away
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const query = input.value.trim();
@@ -182,7 +180,6 @@
     if (currentPage > 1) {
       currentPage--;
       doSearch(currentQuery, currentPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -190,7 +187,6 @@
     if (currentPage < totalPages) {
       currentPage++;
       doSearch(currentQuery, currentPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -224,7 +220,7 @@
     }
   });
 
-  // If arriving with ?q= in the URL, pre-fill and run the search
+  // if there's a ?q= in the URL (e.g. coming back from a movie page), run the search automatically
   const q = getParam('q');
   if (q) {
     input.value = q;
@@ -235,7 +231,6 @@
 
   updateClearBtn();
 
-  // Search history chips
   const renderHistory = () => {
     const historyEl = document.getElementById('searchHistory');
     const chipsEl   = document.getElementById('searchHistoryChips');

@@ -1,13 +1,11 @@
 // discover.js - Discover mode filters and results.
 
 (() => {
-  // Mode toggle
   const modeSearch   = document.getElementById('modeSearch');
   const modeDiscover = document.getElementById('modeDiscover');
   const searchPane   = document.getElementById('searchPane');
   const discoverPane = document.getElementById('discoverPane');
 
-  // Discover controls
   const genreSelect   = document.getElementById('genreSelect');
   const ratingSelect  = document.getElementById('ratingSelect');
   const sortSelect    = document.getElementById('sortSelect');
@@ -28,10 +26,8 @@
   let totalPages  = 1;
   let lastParams  = {};
 
-  // Swaps between Search and Discover UI panes.
-  // Also transfers ownership of the pagination buttons:
-  // in search mode, search.js handles prev/next via addEventListener.
-  // In discover mode, we take over via .onclick (which overrides addEventListener).
+  // switches between the two panes. in discover mode we use .onclick for pagination
+  // so it overrides the addEventListener that search.js already registered
   const switchMode = (mode) => {
     if (mode === 'search') {
       modeSearch.classList.add('active');
@@ -51,14 +47,12 @@
         if (currentPage > 1) {
           currentPage--;
           doDiscover(lastParams, currentPage);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       };
       nextBtn.onclick = () => {
         if (currentPage < totalPages) {
           currentPage++;
           doDiscover(lastParams, currentPage);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       };
     }
@@ -83,8 +77,7 @@
     switchMode('discover');
   }
 
-  // Fetch the TMDB genre list and populate the dropdown.
-  // Non-fatal - if it fails the dropdown just shows "Any Genre".
+  // load genres for the dropdown — if it fails it just stays on "Any Genre"
   const loadGenres = async () => {
     try {
       const data = await TMDB.getGenres();
@@ -95,7 +88,7 @@
         genreSelect.appendChild(opt);
       });
     } catch (_) {
-      // Non-fatal: dropdown stays at "Any Genre" default
+      // not a big deal if this fails
     }
   };
 
@@ -129,9 +122,8 @@
     }
   };
 
-  // Builds API params from the user's filter selections and fires the request.
-  // vote_count.gte: 100 filters out obscure films with only 1-2 votes that
-  // happen to have a perfect rating.
+  // build params from the filter dropdowns and fetch. vote_count.gte=100 stops films
+  // with 1-2 votes from showing up just because they have a perfect score
   const doDiscover = async (params, page = 1) => {
     discoverError.classList.remove('visible');
     Spinner.show(grid, 'Searching the archives...');

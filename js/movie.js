@@ -1,41 +1,33 @@
 // movie.js - Movie detail page. Fetches and renders all data for a single film.
 
 (() => {
-  // Read the movie ID from the URL: e.g. movie.html?id=550 gives '550'
   const movieId = getParam('id');
 
   const loadingState  = document.getElementById('loadingState');
   const detailContent = document.getElementById('detailContent');
   const errorState    = document.getElementById('errorState');
 
-  // If no ID in the URL, show error immediately and stop
   if (!movieId) {
     loadingState.style.display = 'none';
     errorState.style.display   = 'block';
     return;
   }
 
-  // Populates the hero section: poster, title, tagline, metadata row, genres, overview
+  // fills in all the hero details: title, poster, ratings, genres, etc.
   const renderDetails = (movie) => {
     document.title = `FrameLedger - ${movie.title}`;
 
-    // Set the blurred backdrop image
-    const backdrop = TMDB.backdropUrl(movie.backdrop_path);
-    if (backdrop) {
-      document.getElementById('backdrop').style.backgroundImage = `url('${backdrop}')`;
-    }
 
-    // Show the poster, or a placeholder div if none is available
     const posterEl  = document.getElementById('detailPoster');
     const posterSrc = TMDB.posterUrl(movie.poster_path, 'w500');
     if (posterSrc) {
       posterEl.src = posterSrc;
       posterEl.alt = movie.title;
     } else {
-      posterEl.outerHTML = `<div class="detail-poster-placeholder">🎬</div>`;
+      posterEl.outerHTML = `<div class="detail-poster-placeholder"></div>`;
     }
 
-    // Set back button to return to search results if ?q= is in the URL
+    // ?q= lets the back button restore the search results it came from
     const backBtn = document.getElementById('backBtn');
     if (backBtn) {
       const referrerQuery = getParam('q');
@@ -68,29 +60,28 @@
     const votes  = movie.vote_count   ? movie.vote_count.toLocaleString()    : '-';
     const lang   = movie.original_language ? movie.original_language.toUpperCase() : '-';
 
-metaRow.innerHTML = `
-        <div class="detail-meta-item">
-          <span class="label">${'Rating'}</span>
-          <span class="value gold">★ ${rating}</span>
-        </div>
-        <div class="detail-meta-item">
-          <span class="label">${'Votes'}</span>
-          <span class="value">${votes}</span>
-        </div>
-        <div class="detail-meta-item">
-          <span class="label">${'Runtime'}</span>
-          <span class="value">${runtime}</span>
-        </div>
-        <div class="detail-meta-item">
-          <span class="label">${'Language'}</span>
-          <span class="value">${lang}</span>
-        </div>
-        <div class="detail-meta-item">
-          <span class="label">${'Status'}</span>
-          <span class="value">${escapeHtml(movie.status || '-')}</span>
-        </div>`;
+    metaRow.innerHTML = `
+      <div class="detail-meta-item">
+        <span class="label">Rating</span>
+        <span class="value gold">★ ${rating}</span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="label">Votes</span>
+        <span class="value">${votes}</span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="label">Runtime</span>
+        <span class="value">${runtime}</span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="label">Language</span>
+        <span class="value">${lang}</span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="label">Status</span>
+        <span class="value">${escapeHtml(movie.status || '-')}</span>
+      </div>`;
 
-    // Genre tags
     const genresEl = document.getElementById('detailGenres');
     if (movie.genres && movie.genres.length) {
       genresEl.innerHTML = movie.genres
@@ -102,14 +93,13 @@ metaRow.innerHTML = `
       movie.overview || 'No overview available.';
   };
 
-  // Filters the videos response for YouTube trailers/teasers.
-  // Prefers an official "Trailer" type over a "Teaser".
-  // Embeds via youtube-nocookie.com to avoid tracking the user.
+  // find the best trailer from the API response and embed it.
+  // youtube-nocookie.com skips tracking cookies
   const renderTrailer = (videos) => {
     const trailers = videos.results.filter(
       (v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
     );
-    if (!trailers.length) return; // No trailer - section stays hidden
+    if (!trailers.length) return; // If no trailer -> section stays hidden
 
     const trailer   = trailers.find((v) => v.type === 'Trailer') || trailers[0];
     const section   = document.getElementById('trailerSection');
@@ -131,8 +121,7 @@ metaRow.innerHTML = `
       </div>`;
   };
 
-  // Shows up to 8 similar films using the same buildMovieCard() as the home page.
-  // Note: linkPrefix is 'movie.html' not 'pages/movie.html' since we're already in /pages/.
+  // linkPrefix is 'movie.html' not 'pages/movie.html' since we're already inside /pages/
   const renderSimilar = (movies) => {
     if (!movies.length) return;
 
@@ -143,13 +132,12 @@ metaRow.innerHTML = `
     section.style.display = 'block';
     if (divider) divider.style.display = 'block';
 
-    movies.slice(0, 8).forEach((movie) => {
+    movies.slice(0, 7).forEach((movie) => {
       grid.appendChild(buildMovieCard(movie, 'movie.html'));
     });
   };
 
-  // Sets up the "Add to Watchlist" form.
-  // Checks if the film is already saved first, so we can show the right button state.
+  // set up the watchlist form — checks MockAPI first so we can show "In Watchlist" if already added
   const initWatchlistForm = async (movie) => {
     const form         = document.getElementById('addToWatchlistForm');
     const addBtn       = document.getElementById('addBtn');
@@ -160,7 +148,7 @@ metaRow.innerHTML = `
     const statusSelect = document.getElementById('statusSelect');
     const charCount    = document.getElementById('noteCharCount');
 
-    // Double-submit guard - set to true while a POST is in-flight
+    // double-submit guard — set true while a POST is in-flight
     let isSubmitting = false;
 
     const updateCharCount = () => {
@@ -173,7 +161,6 @@ metaRow.innerHTML = `
     noteInput.addEventListener('input', updateCharCount);
     updateCharCount();
 
-    // Check if already in the watchlist - pre-fill and disable Add if so
     try {
       const existing = await WatchlistAPI.findByTmdbId(movieId);
       if (existing) {
@@ -185,7 +172,7 @@ metaRow.innerHTML = `
         updateCharCount();
       }
     } catch (_) {
-      // If MockAPI is unreachable, fail silently - the form still works for adding
+      // If MockAPI is unreachable, fail silently; the form still works for adding
     }
 
     viewBtn.addEventListener('click', () => {
@@ -211,8 +198,7 @@ metaRow.innerHTML = `
       addBtn.disabled    = true;
       addBtn.textContent = 'Adding...';
 
-      // Store the fields we need on the watchlist page so it doesn't have to
-      // re-fetch everything from TMDB just to display the entry
+      // save movie info in the entry so the watchlist page doesn't need to call TMDB again
       const entry = {
         tmdbId:      movie.id,
         title:       movie.title,
@@ -230,20 +216,18 @@ metaRow.innerHTML = `
         addBtn.textContent    = '✓ In Watchlist';
         viewBtn.style.display = 'inline-flex';
       } catch (err) {
-        // Unlock the form so the user can try again
-        isSubmitting       = false;
+          isSubmitting       = false;
         addBtn.disabled    = false;
         addBtn.textContent = 'Add to Watchlist';
         formError.textContent = 'Failed to add to watchlist. Please try again.';
         formError.classList.add('visible');
         Toast.error('Could not save to watchlist: ' + err.message);
       }
-      // isSubmitting is NOT reset on success - once added the button stays disabled
+      // intentionally not reset on success — once added, the button stays disabled
     });
   };
 
-  // Shows up to 3 audience reviews. Skips reviews shorter than 100 characters
-  // since they don't add much. Long reviews get a "Read more" expand toggle.
+  // show up to 3 reviews — skip short ones under 100 chars, truncate long ones with a toggle
   const renderReviews = (reviewsData) => {
     const reviews = reviewsData.results
       .filter((r) => r.content && r.content.length >= 100)
@@ -307,8 +291,7 @@ metaRow.innerHTML = `
     });
   };
 
-  // Fires all four TMDB requests at the same time using Promise.all(),
-  // then renders each section. Shows the error state if anything critical fails.
+  // run all four API calls at once, then render each section
   const init = async () => {
     try {
       const [movie, videos, similar, reviews] = await Promise.all([
